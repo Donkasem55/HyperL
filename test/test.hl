@@ -1,9 +1,9 @@
-func main <= () => int <= {
+func main->int <= () => {
 	"very funny test";
 	// some more test stuff
 	5;
-	0x5;
-	0b9;
+	0x5A;
+	0b010101;
 
 	%rax <= 0;
 	exit;
