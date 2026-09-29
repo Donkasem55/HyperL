@@ -4,15 +4,18 @@ from util import *
 from lex.prim import prim, prim_det
 from lex.keyword import keyword
 from lex.cf import cf
+from lex.bl import bl
 from lex.reg import reg
 from lex.var import var, func
 
 KWlist = ["func"] # keywords list
 FNKWlist = ["func"] # function defining keywords list
 CFlist = ["=>", "<=", "->", "<-"] # controlflow list
-PUNClist = ";,:!$%(){}[]"
+BOOLlist = ["==", "!=", "<==", ">==", "<", ">"]
+PUNClist = ";,:$%(){}[]"
 SEMICOLON = ("SEMICOLON",)
-
+OPR = "+-*/&"
+OPRKEY = ["+", "-", "*", "/", "&&", "&", "+=", "-=", "*=", "/=", "//", "%", "<<=", ">>=", "//=", "%=", "<<", ">>"]
 
 def token(data):
 	ret = [""]
@@ -54,11 +57,22 @@ def token(data):
 				elif data[j+1] == "*":
 					flag[2] = True
 
+				else:
+					try:
+						if strifin(ret[-1][-1], "=><-" + OPR + PUNClist):
+							ret[-1] += i
+						else:
+							ret.append(i)
+
+					except IndexError:
+						ret.append(i)
+
+
 		elif i == "\n":
 			flag[0], flag[1], = False, False
 			ret.append("")
 
-		elif strifin(i, "=><-"):
+		elif strifin(i, "=><-!" + OPR + PUNClist):
 			if flag[1] or flag[2]:
 				j += 1
 				continue
@@ -69,7 +83,7 @@ def token(data):
 				continue
 
 			try:
-				if strifin(ret[-1][-1], "=><-"):
+				if strifin(ret[-1][-1], "=><-" + OPR + PUNClist):
 					ret[-1] += i
 				else:
 					ret.append(i)
@@ -104,7 +118,7 @@ def token(data):
 				continue
 
 			try:
-				if strifin(ret[-1][-1], "=><-"):
+				if strifin(ret[-1][-1], "=><-" + OPR + PUNClist):
 					ret.append(i)
 				else:
 					ret[-1] += i
@@ -133,20 +147,29 @@ def lexer(data):
 		if i in KWlist:
 			ret.append(keyword(i))
 
+		elif i in BOOLlist:
+			ret.append(bl(i))
+
 		elif i in CFlist:
 			ret.append(cf(i))
 
 		elif i == ";":
 			ret.append(SEMICOLON)
 
+		elif i[0] == "%":
+			if len(i) > 1:
+				ret.append(reg(i[1:]))
+			else:
+				ret.append(("OPERATION", "%"))
+
+		elif strifin(i, OPR):
+			ret.append(("OPERATION", i))
+
 		elif strifin(i, PUNClist):
 			ret.append(("PUNC", i))
 
-		elif i[0] == "%":
-			ret.append(reg(i[1:]))
-
 		else:
-			if ret[-1][0] in ["PUNC", "SEMICOLON"] or ret[-1][1] in FNKWlist:
+			if ret[-1][0] in ["SEMICOLON"] or ret[-1][1] in FNKWlist:
 				ret.append(func(i))
 
 			else:
