@@ -168,10 +168,18 @@ def lexer(data):
 def lextest(filename="test/test.hl"):
 	with open(filename) as f:
 		d = f.read()
-	print(token(d))
+	print("\nTokenised Array: \n")
 	tok = token(d)
-	print(lexer(tok))
+	for i in range(len(tok)):
+		print(f"' {tok[i]} '", end="")
+		if i != len(tok)-1:
+			print(", ", end="")
+
+	print("\n\nLexed Abstract Tokens: \n")
 	lex = lexer(tok)
+	for i in lex:
+		print("\t", i)
+	print()
 
 if __name__ == "__main__":
 	lextest()
