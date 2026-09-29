@@ -1,129 +1,90 @@
-from lexer import lexer
+from util import *
+from lexer import *
+from const import *
+from evalexpr import *
 
-binops = ["+", "-", "*", "/", "//", "%", "==", "!=", ">==", "<=="]
-
-uT = ["FLOAT", "INT", "DOUBLE"]
-
-def evalexpr(data, o=[True]): # optimisation flags: ( compute number literal [operation] number literal during compile time? )
-	if len(data) == 1:
-		return data[0]
-
-	if o[0] and len(data) == 3 and data[0][0] in uT and data[2][0] in uT:
-		ft = "INT"
-		if data[1][1] == "/":
-			ft = "FLOAT"
-
-		if data[0][0] == "FLOAT" or data[2][0] == "FLOAT":
-			ft = "FLOAT"
-
-		if data[0][0] == "DOUBLE" or data[2][0] == "DOUBLE":
-			ft = "DOUBLE"
-
-		if data[1][1] == "+":
-			ret = float(data[0][1]) + float(data[2][1])
-
-		elif data[1][1] == "-":
-			ret = float(data[0][1]) - float(data[2][1])
-
-		elif data[1][1] == "*":
-			ret = float(data[0][1]) * float(data[2][1])
-
-		elif data[1][1] == "/":
-			ret = float(data[0][1]) / float(data[2][1])
-
-		elif data[1][1] == "//":
-			ret = float(data[0][1]) // float(data[2][1])
-
-		elif data[1][1] == "%":
-			ret = float(data[0][1]) % float(data[2][1])
-
-		if data[1][1] in ["//", "%"]:
-			ft = "INT"
-
-		if ft == "FLOAT" or ft == "DOUBLE":
-			return (ft, float(ret))
-		elif ft == "INT":
-			return (ft, int(ret))
-
-
-	expr = [[], tuple(), []]
+def tree(data):
+	ls = [[]]
 	i = 0
-	lvl = 0 # level of nesting brackets
-
-	if len(data) == 3:
-		return data
-
+	l = 0
+	l1 = 0
+	tmp = []
 	while i < len(data):
-		if data[i][1] == "(":
-			if lvl > 0:
-				expr[0].append(data[i])
-			lvl += 1
+		if data[i][1] == "}":
+			if l == 1:
+				ls.append([])
+				l -= 1
+			else:
+				l -= 1
+				ls[-1].append(data[i])
 
-		elif lvl == 0:
-			if data[0][1] != "(":
-				expr[0].append(data[i])
-				i += 1
-			break
+		elif data[i][1] == "{":
+			if l != 0:
+				ls[-1].append(data[i])
+			else:
+				ls.append([])
+			l += 1
+
+		elif data[i][1] == "(":
+			l1 += 1
+			if l1 > 1:
+				tmp.append(data[i])
 
 		elif data[i][1] == ")":
-			if lvl == 0:
-				break
+			l1 -= 1
+			if l1 == 0:
+				ls[-1].append(evalexpr(tmp))
+				tmp = []
+				ls[-1].append(("SEMICOLON", ";"))
 			else:
-				if lvl > 1:
-					expr[0].append(data[i])
-
-				lvl -= 1
+				tmp.append(data[i])
 
 		else:
-			expr[0].append(data[i])
+			if l1 == 0:
+				ls[-1].append(data[i])
+			else:
+				tmp.append(data[i])
 
 		i += 1
 
-	expr[1] = data[i]
-	i += 1
+	if len(ls) == 1:
+		return ls[0]
 
-	j = i
-	lvl = 0
-	while i < len(data):
-		if data[i][1] == "(":
-			if lvl > 0:
-				expr[2].append(data[i])
-			lvl += 1
+	while [] in ls:
+		ls.remove([])
 
-		elif lvl == 0:
-			expr[2].append(data[i])
-			break
+	i = 0
+	while i < len(ls):
+		e = tree(ls[i])
+		#if len(e) == 1:
+		#	e = e[0]
 
-		elif data[i][1] == ")":
-			if lvl == 0:
-				break
-			else:
-				if lvl > 1:
-					expr[2].append(data[i])
-				lvl -= 1
-
-		else:
-			expr[2].append(data[i])
-
+		ls[i] = e
 		i += 1
 
-	a = evalexpr(expr[0], o)
-	b = evalexpr(expr[2], o)
+	return ls
 
-	expr[0] = a
-	expr[2] = b
+def astree(data):
+	pass
 
-	if len(data) > i+1:
-		expr = evalexpr([expr] + data[i+1:])
+def asttest(filename="test/test.hl"):
+	with open(filename) as f:
+		d = f.read()
+	print("\nRaw Tokens: \n")
+	tok = token(d)
+	for i in range(len(tok)):
+		print(f"' {tok[i]} '", end="")
+		if i != len(tok)-1:
+			print(", ", end="")
 
-	return expr
+	print("\n\nLexed Tokens: \n")
+	lex = lexer(tok)
+	for i in lex:
+		print("\t", i)
 
-
+	print("\n\nConcrete Syntax Tree: \n")
+	cst = tree(lex)
+	print(cst, "\n")
 
 if __name__ == "__main__":
-	print(evalexpr([("VARIABLE", "x"), ("OPERATION", "/"), ("DOUBLE", 4.0)]))
-	print(evalexpr(lexer(["x",  "/", "(", "y", "*", "(", "5", "*", "4", ")", ")"])))
-	print(evalexpr(lexer(["(", "x", "+", "5", ")",  "/", "(", "y", "*", "(", "5", "*", "4", ")", ")"])))
-	print(evalexpr(lexer(["x", "+", "5",  "/", "(", "y", "*", "(", "5", "*", "4", ")", ")"])))
-	print(evalexpr([('VARIABLE', 'y'), ('OPERATION', '*'), ('PUNC', '('), ('INT', 5), ('OPERATION', '*'), ('INT', 4), ('PUNC', ')')]))
-	print(evalexpr([("FLOAT", 5.0), ("OPERATION", "/"), ("DOUBLE", 4.0)]))
+	asttest()

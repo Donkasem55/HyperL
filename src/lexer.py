@@ -8,12 +8,13 @@ from lex.bl import bl
 from lex.reg import reg
 from lex.var import var, func
 
-KWlist = ["func"] # keywords list
+KWlist = ["func", "if", "while"] # keywords list
 FNKWlist = ["func"] # function defining keywords list
 CFlist = ["=>", "<=", "->", "<-"] # controlflow list
 BOOLlist = ["==", "!=", "<==", ">==", "<", ">"]
-PUNClist = ";,:$%(){}[]"
-SEMICOLON = ("SEMICOLON",)
+PUNClist = ";,:$(){}[]"
+HYPERPUNClist = "{}"
+SEMICOLON = ("SEMICOLON", ";")
 OPR = "+-*/&"
 OPRKEY = ["+", "-", "*", "/", "&&", "&", "+=", "-=", "*=", "/=", "//", "%", "<<=", ">>=", "//=", "%=", "<<", ">>"]
 
@@ -83,7 +84,7 @@ def token(data):
 				continue
 
 			try:
-				if strifin(ret[-1][-1], "=><-" + OPR + PUNClist):
+				if strifin(ret[-1][-1], "=><-!" + OPR + PUNClist):
 					ret[-1] += i
 				else:
 					ret.append(i)
@@ -158,18 +159,19 @@ def lexer(data):
 
 		elif i[0] == "%":
 			if len(i) > 1:
-				ret.append(reg(i[1:]))
-			else:
-				ret.append(("OPERATION", "%"))
+				if i[1] == "%":
+					ret.append(("OPERATION", "%"))
+				else:
+					ret.append(reg(i[1:]))
 
-		elif strifin(i, OPR):
+		elif i in OPRKEY:
 			ret.append(("OPERATION", i))
 
 		elif strifin(i, PUNClist):
 			ret.append(("PUNC", i))
 
 		else:
-			if ret[-1][0] in ["SEMICOLON"] or ret[-1][1] in FNKWlist:
+			if ret[-1][0] in ["SEMICOLON"] or strifin(ret[-1][1], HYPERPUNClist) or ret[-1][1] in FNKWlist:
 				ret.append(func(i))
 
 			else:

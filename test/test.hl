@@ -1,4 +1,4 @@
-func main->int <= () => {
+func main->int <= 2 => {
 	"very funny test";
 	// some more test stuff
 	5;
@@ -6,12 +6,16 @@ func main->int <= () => {
 	0b010101;
 
 	5 + 5;
-	0x66 + 0x99;
-	(6/5);
+	((0x66 + 0x99) * (6/5))
 	%rax += 1;
 	1 % 2;
 	1 >== 2;
 	1 <== 2;
+	6 %% 5;
+
+	if (1 <== 2) {
+		do_something;
+	}
 
 	%rax <= 0;
 	exit;
