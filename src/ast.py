@@ -111,6 +111,7 @@ def astree(data):
 
 
 def asttest(filename="test/test.hl"):
+	# the AST tester
 	with open(filename) as f:
 		d = f.read()
 	print("\nRaw Tokens: \n")
@@ -132,6 +133,8 @@ def asttest(filename="test/test.hl"):
 	print("\n\nAbstract Syntax Tree: \n")
 	ast = astree(cst)
 	pprint.pp(ast, width=120, indent=4)
+
+	print("\n\nMade by Raine (TheLuckyCuber999)\n\n") # you can delete this line if you want to, since it's public domain, but please don't :(
 
 if __name__ == "__main__":
 	asttest()
