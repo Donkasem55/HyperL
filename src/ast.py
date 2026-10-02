@@ -84,25 +84,55 @@ def astree(data):
 			if ret["NODE"][1]["TYPE"] == "OPERATION":
 				t = ret["NODE"][1]["NODE"]
 
-				ret["TYPE"] = t
+				ret["TYPE"] = "MATH_BINARY"
+				ret["OPERATION"] = t
 				if t == "+":
-					ret["TYPE"] = "PLUS"
+					ret["OPERATION"] = "PLUS"
 				elif t == "-":
-					ret["TYPE"] = "SUBTRACT"
+					ret["OPERATION"] = "SUBTRACT"
 				elif t == "*":
-					ret["TYPE"] = "MULTIPLY"
+					ret["OPERATION"] = "MULTIPLY"
 				elif t == "/":
-					ret["TYPE"] = "DIVIDE"
+					ret["OPERATION"] = "DIVIDE"
 				elif t == "//":
-					ret["TYPE"] = "INTDIV"
+					ret["OPERATION"] = "INTDIV"
 				elif t == "&&":
-					ret["TYPE"] = "BOOLAND"
+					ret["OPERATION"] = "BOOLAND"
 				elif t == "&":
-					ret["TYPE"] = "AND"
+					ret["OPERATION"] = "AND"
 				elif t == "%":
-					ret["TYPE"] = "MODULO"
+					ret["OPERATION"] = "MODULO"
 
 				ret["NODE"].pop(1)
+
+			elif ret["NODE"][1]["TYPE"] == "BOOL":
+				t = ret["NODE"][1]["NODE"]
+
+				ret["TYPE"] = "BOOL_BINARY"
+				ret["OPERATION"] = t
+				if t == "<==":
+					ret["OPERATION"] = "LESS_EQ"
+				elif t == ">==":
+					ret["OPERATION"] = "GREATER_EQ"
+				elif t == "==":
+					ret["OPERATION"] = "EQUAL"
+				elif t == "!=":
+					ret["OPERATION"] = "NEQUAL"
+				elif t == "<":
+					ret["OPERATION"] = "LESS"
+				elif t == ">":
+					ret["OPERATION"] = "GREATER"
+
+				ret["NODE"].pop(1)
+
+		if ret["TYPE"] == "EXPR":
+			if ret["NODE"][0] == {"TYPE": "KEYWORD", "NODE": "if"}:
+				ret["TYPE"] = "IF"
+				ret["NODE"] = ret["NODE"][1]
+
+			elif ret["NODE"][0] == {"TYPE": "KEYWORD", "NODE": "while"}:
+				ret["TYPE"] = "WHILE"
+				ret["NODE"] = ret["NODE"][1]
 
 	else:
 		ret = {"TYPE": data[0], "NODE": data[1]}
