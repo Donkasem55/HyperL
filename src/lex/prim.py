@@ -33,11 +33,11 @@ def prim_det(data): # primitive determiner
 			return ("INT", int(data[1:]))
 	
 	ft = data.split(".") # float test
-	if len(data) == 2:
+	if len(ft) == 2:
 		if ft[0].isdigit() and ft[1].isdigit():
 			return ("DOUBLE", float(data))
 
 		elif ft[0].isdigit() and ft[1][-1] == "f" and ft[1][:-1].isdigit():
-			return ("FLOAT", float(data))
+			return ("FLOAT", float(data[:-1]))
 
 	return False

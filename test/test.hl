@@ -1,14 +1,22 @@
-func main->int <= 2 {
+func main->int <= str:const argv <= int argc->5 {
 	%rax += 1;
 	%rbx <= (%rax + %rcx);
 	%rbx <= (%rax + (%rcx * %rdx));
-	%rbx <= (%rax + (%rcx * (%rbx * %rdx)));
+	%rbx <= ((%rax + %rbx) + (%rcx * (%rbx * %rdx)));
 	%rdx <= (2 %% 1);
 
 	if (1 <== 2) {
-		do_something <- 5;
-		do_other_thing <- 6;
+		do_something <= 5 <= arg->5;
+		do_other_thing <= 6;
 	}
+
+	int x:const -> 5;
+	unsigned p:const -> 5;
+	unsigned int r:readonly -> 5;
+	double y -> 5.5;
+	unsigned long long:readonly z -> 500000;
+	float w -> 5.4f;
+	long long int q -> 5;
 
 	%rax <= 0;
 	exit;

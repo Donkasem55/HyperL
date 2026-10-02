@@ -13,7 +13,11 @@ def cstree(data):
 		i = data[j]
 		if i[0] == "LPAREN":
 			if tmp2:
-				tmparr[-1].append(tmp2)
+				if tmp2[0][0] == "OPERATION":
+					tmparr[-1] += (tmp2)
+					tmparr[-1] = [tmparr[-1]]
+				else:
+					tmparr[-1].append(tmp2)
 			tmp2 = []
 			tmparr.append([])
 			tmparr2.append("PAREN")
@@ -22,7 +26,10 @@ def cstree(data):
 			if tmparr2.pop(-1) == "PAREN":
 				tmp = tmparr.pop(-1)
 				if tmp2:
-					tmparr[-1][-1].append(tmp2)
+					try:
+						tmparr[-1][-1].append(tmp2)
+					except:
+						tmparr[-1].append(tmp2)
 				tmp2 = []
 				if tmp:
 					tmparr[-1][-1].append(tmp)
@@ -60,7 +67,60 @@ def astree(data):
 			if data[0][1] == "func":
 				ret["TYPE"] = "FUNCDEF"
 				ret["NODE"] = data[1][1]
-				ret["ARGC"] = data[5][1]
+				ret["ARGS"] = []
+				args = []
+				ret["ARGC"] = 0
+				i = 2
+				e = False
+				while i < len(data):
+					if data[i][1] == "->" and not e:
+						ret["RETTYPE"] = data[i+1][1]
+						i += 1
+						e = True
+
+					elif data[i][1] == "<=":
+						args.append([])
+						ret["ARGC"] += 1
+
+					else:
+						args[-1].append(data[i])
+
+					i += 1
+
+				for j in args:
+					arg = {"const":False,"readonly":False,"DATATYPE":""}
+					i = 0
+					while i < len(j):
+						if j[i][1] == "int":
+							arg["DATATYPE"] += "INT"
+						elif j[i][1] == "unsigned":
+							arg["DATATYPE"] += "UNSIGNED"
+						elif j[i][1] == "long":
+							arg["DATATYPE"] += "LONG"
+						elif j[i][1] == "str":
+							arg["DATATYPE"] += "STR"
+						elif j[i][1] == "float":
+							arg["DATATYPE"] += "FLOAT"
+						elif j[i][1] == "double":
+							arg["DATATYPE"] += "DOUBLE"
+
+						elif j[i][0] == "COLON":
+							if j[i+1][1] in arg:
+								arg[j[i+1][1]] = True
+
+						elif j[i][1] == "->":
+							arg["DEFAULT"] = j[i+1][1]
+
+						elif j[i][0] == "VARIABLE":
+							arg["NAME"] = j[i][1]
+
+						arg["DATATYPE"] = arg["DATATYPE"].replace("LONGINT", "LONG")
+						arg["DATATYPE"] = arg["DATATYPE"].replace("UNSIGNEDINT", "UNSIGNED")
+
+						i += 1
+
+					ret["ARGS"].append(arg)
+
 				return ret
 
 		except:
@@ -134,8 +194,73 @@ def astree(data):
 				ret["TYPE"] = "WHILE"
 				ret["NODE"] = ret["NODE"][1]
 
+			elif ret["NODE"][0]["TYPE"] == "FUNCTION":
+				try:
+					args = ret["NODE"][1:]
+				except IndexError:
+					return ret
+
+				ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": ret["NODE"][0]["NODE"]}
+				i = 0
+				while i < len(args):
+					if args[i]["NODE"] == "<=":
+						try:
+							if args[i+2]["NODE"] == "->":
+								ret["ARGNAME"][args[i+1]["NODE"]] = args[i+3]["NODE"]
+								i += 4
+							else:
+								ret["ARGPOS"].append(args[i+1]["NODE"])
+								i += 1
+						except:
+							ret["ARGPOS"].append(args[i+1]["NODE"])
+							i += 1
+
+					i += 1
+
+			elif ret["NODE"][0]["TYPE"] == "KEYWORD":
+				if ret["NODE"][0]["NODE"] in ["int", "float", "double", "str", "unsigned", "long"]:
+					arg = {"const":False,"readonly":False,"DATATYPE":""}
+					j = ret["NODE"]
+					i = 0
+					while i < len(j):
+						if j[i]["NODE"] == "int":
+							arg["DATATYPE"] += "INT"
+						elif j[i]["NODE"] == "unsigned":
+							arg["DATATYPE"] += "UNSIGNED"
+						elif j[i]["NODE"] == "long":
+							arg["DATATYPE"] += "LONG"
+						elif j[i]["NODE"] == "str":
+							arg["DATATYPE"] += "STR"
+						elif j[i]["NODE"] == "float":
+							arg["DATATYPE"] += "FLOAT"
+						elif j[i]["NODE"] == "double":
+							arg["DATATYPE"] += "DOUBLE"
+
+						elif j[i]["TYPE"] == "COLON":
+							if j[i+1]["NODE"] in arg:
+								arg[j[i+1]["NODE"]] = True
+
+						elif j[i]["NODE"] == "->":
+							arg["DEFAULT"] = j[i+1]["NODE"]
+
+						elif j[i]["TYPE"] == "VARIABLE":
+							arg["NAME"] = j[i]["NODE"]
+
+						arg["DATATYPE"] = arg["DATATYPE"].replace("LONGINT", "LONG")
+						arg["DATATYPE"] = arg["DATATYPE"].replace("UNSIGNEDINT", "UNSIGNED")
+
+						i += 1
+
+					ret["NODE"] = arg
+					ret["TYPE"] = "VARDEF"
+
+
+
 	else:
-		ret = {"TYPE": data[0], "NODE": data[1]}
+		if data[0] == "FUNCTION":
+			ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": data[1]}
+		else:
+			ret = {"TYPE": data[0], "NODE": data[1]}
 
 	return ret
 
