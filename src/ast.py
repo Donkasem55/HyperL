@@ -127,7 +127,7 @@ def asttest(filename="test/test.hl"):
 
 	print("\n\nConcrete Syntax Tree: \n")
 	cst = cstree(lex)
-	pprint.pp(cst, width=120, indent=4)
+	pprint.pp(cst, width=120, indent=8)
 
 	print("\n\nAbstract Syntax Tree: \n")
 	ast = astree(cst)
