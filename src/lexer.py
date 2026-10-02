@@ -154,9 +154,6 @@ def lexer(data):
 		elif i in CFlist:
 			ret.append(cf(i))
 
-		elif i == ";":
-			ret.append(SEMICOLON)
-
 		elif i[0] == "%":
 			if len(i) > 1:
 				if i[1] == "%":
@@ -168,7 +165,30 @@ def lexer(data):
 			ret.append(("OPERATION", i))
 
 		elif strifin(i, PUNClist):
-			ret.append(("PUNC", i))
+			if i == "(":
+				ret.append(("LPAREN", i))
+			elif i == ")":
+				ret.append(("RPAREN", i))
+			elif i == "{":
+				ret.append(("LCURLB", i))
+			elif i == "}":
+				ret.append(("RCURLB", i))
+			elif i == "[":
+				ret.append(("LSQBRAC", i))
+			elif i == "]":
+				ret.append(("RSQBRAC", i))
+
+			elif i == "$":
+				ret.append(("DOLLAR", i))
+			elif i == ":":
+				ret.append(("COLON", i))
+			elif i == ";":
+				ret.append(("SEMICOLON", i))
+			elif i == ",":
+				ret.append(("COMMA", i))
+
+			else:
+				ret.append(("PUNC", i))
 
 		else:
 			if ret[-1][0] in ["SEMICOLON"] or strifin(ret[-1][1], HYPERPUNClist) or ret[-1][1] in FNKWlist:

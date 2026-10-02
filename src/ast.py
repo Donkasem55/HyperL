@@ -3,69 +3,54 @@ from lexer import *
 from const import *
 from evalexpr import *
 
-def tree(data):
-	ls = [[]]
-	i = 0
-	l = 0
-	l1 = 0
-	tmp = []
-	while i < len(data):
-		if data[i][1] == "}":
-			if l == 1:
-				ls.append([])
-				l -= 1
-			else:
-				l -= 1
-				ls[-1].append(data[i])
 
-		elif data[i][1] == "{":
-			if l != 0:
-				ls[-1].append(data[i])
-			else:
-				ls.append([])
-			l += 1
+def cstree(data):
+	tmparr = [[]]
+	tmparr2 = ["CURL"]
+	tmp2 = []
+	for j in range(len(data)):
+		i = data[j]
+		if i[0] == "LPAREN":
+			if tmp2:
+				tmparr[-1].append(tmp2)
+			tmp2 = []
+			tmparr.append([])
+			tmparr2.append("PAREN")
 
-		elif data[i][1] == "(":
-			l1 += 1
-			if l1 > 1:
-				tmp.append(data[i])
+		elif i[0] == "RPAREN":
+			if tmparr2.pop(-1) == "PAREN":
+				tmp = tmparr.pop(-1)
+				if tmp2:
+					tmparr[-1].append(tmp2)
+				tmp2 = []
+				if tmp:
+					tmparr[-1].append(tmp)
 
-		elif data[i][1] == ")":
-			l1 -= 1
-			if l1 == 0:
-				ls[-1].append(evalexpr(tmp))
-				tmp = []
-				ls[-1].append(("SEMICOLON", ";"))
-			else:
-				tmp.append(data[i])
+		elif i[0] == "LCURLB":
+			if tmp2:
+				tmparr[-1].append(tmp2)
+			tmp2 = []
+			tmparr.append([])
+			tmparr2.append("CURL")
+
+		elif i[0] == "RCURLB":
+			if tmparr2.pop(-1) == "CURL":
+				tmp = tmparr.pop(-1)
+				if tmp2:
+					tmparr[-1].append(tmp2)
+				tmp2 = []
+				if tmp:
+					tmparr[-1].append(tmp)
+
+		elif i[0] == "SEMICOLON":
+			if tmp2:
+				tmparr[-1].append(tmp2)
+			tmp2 = []
 
 		else:
-			if l1 == 0:
-				ls[-1].append(data[i])
-			else:
-				tmp.append(data[i])
+			tmp2.append(i)
 
-		i += 1
-
-	if len(ls) == 1:
-		return ls[0]
-
-	while [] in ls:
-		ls.remove([])
-
-	i = 0
-	while i < len(ls):
-		e = tree(ls[i])
-		#if len(e) == 1:
-		#	e = e[0]
-
-		ls[i] = e
-		i += 1
-
-	return ls
-
-def astree(data):
-	pass
+	return tmparr[0]
 
 def asttest(filename="test/test.hl"):
 	with open(filename) as f:
@@ -83,8 +68,9 @@ def asttest(filename="test/test.hl"):
 		print("\t", i)
 
 	print("\n\nConcrete Syntax Tree: \n")
-	cst = tree(lex)
-	print(cst, "\n")
+	cst = cstree(lex)
+	import pprint
+	pprint.pp(cst, width=40, indent=4)
 
 if __name__ == "__main__":
 	asttest()
