@@ -8,7 +8,7 @@ from lex.bl import bl
 from lex.reg import reg
 from lex.var import var, func
 
-KWlist = ["func", "if", "while"] # keywords list
+KWlist = ["func", "if", "while", "int", "float", "double"] # keywords list
 FNKWlist = ["func"] # function defining keywords list
 CFlist = ["=>", "<=", "->", "<-"] # controlflow list
 BOOLlist = ["==", "!=", "<==", ">==", "<", ">"]
@@ -16,7 +16,8 @@ PUNClist = ";,:$(){}[]"
 HYPERPUNClist = "{}"
 SEMICOLON = ("SEMICOLON", ";")
 OPR = "+-*/&"
-OPRKEY = ["+", "-", "*", "/", "&&", "&", "+=", "-=", "*=", "/=", "//", "%", "<<=", ">>=", "//=", "%=", "<<", ">>"]
+OPRKEY = ["+", "-", "*", "/", "&&", "&", "//", "%", "<<", ">>"]
+INSOPRKEY = ["+=", "-=", "*=", "/=", "<<=", ">>=", "//=", "%="]
 
 def token(data):
 	ret = [""]
@@ -163,6 +164,9 @@ def lexer(data):
 
 		elif i in OPRKEY:
 			ret.append(("OPERATION", i))
+
+		elif i in INSOPRKEY:
+			ret.append(("UNARY", i))
 
 		elif strifin(i, PUNClist):
 			if i == "(":
