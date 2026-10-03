@@ -243,10 +243,11 @@ def astree(data):
 							arg["DATATYPE"] += "FLOAT"
 							arg["DEFAULT"] = 0.0
 						elif j[i]["NODE"] == "double":
-							arg["DEFAULT"] = 0.0
 							arg["DATATYPE"] += "DOUBLE"
+							arg["DEFAULT"] = 0.0
 						elif j[i]["NODE"] == "pointer":
 							arg["DATATYPE"] = "PTR"
+							arg["DEFAULT"] = 0
 
 						elif j[i]["TYPE"] == "COLON":
 							if j[i+1]["NODE"] in arg:
@@ -270,6 +271,14 @@ def astree(data):
 					ret["NODE"] = arg
 					ret["TYPE"] = "VARDEF"
 
+
+			else:
+				try:
+					if ret["NODE"][1] == {"TYPE": "CF", "NODE": "<="}:
+						ret["TYPE"] = "ASSIGNMENT"
+						ret["NODE"] = [ret["NODE"][0], ret["NODE"][2]]
+				except IndexError:
+					pass
 
 
 	else:

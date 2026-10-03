@@ -73,9 +73,20 @@ def test(filename="test/test.hl"):
 	AST = astree(cst)
 	pprint.pp(AST, width=120, indent=4)
 
-	print("\n\nGenerated Procedural Intermediate Representation: \n")
+	print("\n\nGenerated Procedural Intermediate Representation:")
 	data, rodata, bss, code = gencode(AST)
-	print(data, rodata, bss, code, var)
+	print("\n.data:")
+	for i in data:
+		print("    ", i)
+	print("\n.rodata:")
+	for i in rodata:
+		print("    ", i)
+	print("\n.bss:")
+	for i in bss:
+		print("    ", i)
+	print("\n.text:")
+	for i in code:
+		print("    ", i)
 
 	print("\n\nMade by Raine (TheLuckyCuber999)\n\n") # you can delete this line if you want to, since it's public domain, but please don't :(
 
