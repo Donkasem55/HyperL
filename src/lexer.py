@@ -79,8 +79,8 @@ def token(data):
 		elif i == "\n":
 			flag[0], flag[1], = False, False
 			ret.append("")
-			clarr.append(l)
 			l += 1
+			clarr.append(l)
 
 		elif strifin(i, "=><-!" + OPR + PUNClist):
 			if flag[1] or flag[2]:
