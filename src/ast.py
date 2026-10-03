@@ -194,7 +194,7 @@ def astree(data):
 				ret["TYPE"] = "WHILE"
 				ret["NODE"] = ret["NODE"][1]
 
-			elif ret["NODE"][0]["TYPE"] == "FUNCTION":
+			elif ret["NODE"][0]["TYPE"] == "FUNCTIONCALL":
 				try:
 					args = ret["NODE"][1:]
 				except IndexError:
