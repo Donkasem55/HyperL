@@ -103,10 +103,15 @@ def astree(data):
 							arg["DATATYPE"] += "FLOAT"
 						elif j[i][1] == "double":
 							arg["DATATYPE"] += "DOUBLE"
+						elif j[i][1] == "pointer":
+							arg["DATATYPE"] += "PTR"
 
 						elif j[i][0] == "COLON":
 							if j[i+1][1] in arg:
 								arg[j[i+1][1]] = True
+
+						elif j[i][1] == "<-":
+							arg["DEFAULT"] = j[i+1][1]
 
 						elif j[i][1] == "->":
 							arg["DEFAULT"] = j[i+1][1]
@@ -218,32 +223,43 @@ def astree(data):
 					i += 1
 
 			elif ret["NODE"][0]["TYPE"] == "KEYWORD":
-				if ret["NODE"][0]["NODE"] in ["int", "float", "double", "str", "unsigned", "long"]:
+				if ret["NODE"][0]["NODE"] in ["int", "float", "double", "str", "unsigned", "long", "pointer"]:
 					arg = {"const":False,"readonly":False,"DATATYPE":""}
 					j = ret["NODE"]
 					i = 0
 					while i < len(j):
 						if j[i]["NODE"] == "int":
 							arg["DATATYPE"] += "INT"
+							arg["DEFAULT"] = 0
 						elif j[i]["NODE"] == "unsigned":
 							arg["DATATYPE"] += "UNSIGNED"
+							arg["DEFAULT"] = 0
 						elif j[i]["NODE"] == "long":
 							arg["DATATYPE"] += "LONG"
+							arg["DEFAULT"] = 0
 						elif j[i]["NODE"] == "str":
 							arg["DATATYPE"] += "STR"
 						elif j[i]["NODE"] == "float":
 							arg["DATATYPE"] += "FLOAT"
+							arg["DEFAULT"] = 0.0
 						elif j[i]["NODE"] == "double":
+							arg["DEFAULT"] = 0.0
 							arg["DATATYPE"] += "DOUBLE"
+						elif j[i]["NODE"] == "pointer":
+							arg["DATATYPE"] = "PTR"
 
 						elif j[i]["TYPE"] == "COLON":
 							if j[i+1]["NODE"] in arg:
 								arg[j[i+1]["NODE"]] = True
 
+						elif j[i]["NODE"] == "<-":
+							arg["DEFAULT"] = j[i+1]["NODE"]
+							arg["DATATYPE"] = "PTR"
+
 						elif j[i]["NODE"] == "->":
 							arg["DEFAULT"] = j[i+1]["NODE"]
 
-						elif j[i]["TYPE"] == "VARIABLE":
+						elif j[i]["TYPE"] == "VARIABLE" and j[i-1]["TYPE"] != "CF":
 							arg["NAME"] = j[i]["NODE"]
 
 						arg["DATATYPE"] = arg["DATATYPE"].replace("LONGINT", "LONG")

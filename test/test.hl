@@ -17,6 +17,9 @@ func main->int <= str:const argv <= int argc->5 {
 	unsigned long long:readonly z -> 500000;
 	float w -> 5.4f;
 	long long int q -> 5;
+	str g -> "Anarchy";
+	int:const f;
+	pointer:const s <- r;
 
 	%rax <= 0;
 	exit;
