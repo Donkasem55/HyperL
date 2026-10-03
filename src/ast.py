@@ -67,6 +67,7 @@ def astree(data):
 			if data[0][1] == "func":
 				ret["TYPE"] = "FUNCDEF"
 				ret["NODE"] = data[1][1]
+				ret["LINE"] = data[0][2]
 				ret["ARGS"] = []
 				args = []
 				ret["ARGC"] = 0
@@ -132,7 +133,7 @@ def astree(data):
 			pass
 
 		if type(data[0]) is tuple:
-			ret = {"TYPE": "EXPR"}
+			ret = {"TYPE": "EXPR", "LINE": data[0][2]}
 
 		else:
 			ret["TYPE"] = "LIST"
@@ -167,6 +168,10 @@ def astree(data):
 					ret["OPERATION"] = "AND"
 				elif t == "%":
 					ret["OPERATION"] = "MODULO"
+				elif t == "<<":
+					ret["OPERATION"] = "SHL"
+				elif t == ">>":
+					ret["OPERATION"] = "SHR"
 
 				ret["NODE"].pop(1)
 
@@ -190,6 +195,36 @@ def astree(data):
 
 				ret["NODE"].pop(1)
 
+			elif ret["NODE"][1]["TYPE"] == "UNARY":
+				t = ret["NODE"][1]["NODE"]
+
+				ret["TYPE"] = "MATH_UNARY"
+				ret["OPERATION"] = t
+				if t == "+=":
+					ret["OPERATION"] = "PLUS"
+				elif t == "-=":
+					ret["OPERATION"] = "SUBTRACT"
+				elif t == "*=":
+					ret["OPERATION"] = "MULTIPLY"
+				elif t == "/=":
+					ret["OPERATION"] = "DIVIDE"
+				elif t == "//=":
+					ret["OPERATION"] = "INTDIV"
+				elif t == "&=":
+					ret["OPERATION"] = "AND"
+				elif t == "//=":
+					ret["OPERATION"] = "INTDIV"
+				elif t == "%=":
+					ret["OPERATION"] = "MODULO"
+				elif t == "<<=":
+					ret["OPERATION"] = "SHL"
+				elif t == ">>=":
+					ret["OPERATION"] = "SHR"
+
+				ret["NODE"].pop(1)
+
+
+
 		if ret["TYPE"] == "EXPR":
 			if ret["NODE"][0] == {"TYPE": "KEYWORD", "NODE": "if"}:
 				ret["TYPE"] = "IF"
@@ -198,29 +233,6 @@ def astree(data):
 			elif ret["NODE"][0] == {"TYPE": "KEYWORD", "NODE": "while"}:
 				ret["TYPE"] = "WHILE"
 				ret["NODE"] = ret["NODE"][1]
-
-			elif ret["NODE"][0]["TYPE"] == "FUNCTIONCALL":
-				try:
-					args = ret["NODE"][1:]
-				except IndexError:
-					return ret
-
-				ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": ret["NODE"][0]["NODE"]}
-				i = 0
-				while i < len(args):
-					if args[i]["NODE"] == "<=":
-						try:
-							if args[i+2]["NODE"] == "->":
-								ret["ARGNAME"][args[i+1]["NODE"]] = args[i+3]["NODE"]
-								i += 4
-							else:
-								ret["ARGPOS"].append(args[i+1]["NODE"])
-								i += 1
-						except:
-							ret["ARGPOS"].append(args[i+1]["NODE"])
-							i += 1
-
-					i += 1
 
 			elif ret["NODE"][0]["TYPE"] == "KEYWORD":
 				if ret["NODE"][0]["NODE"] in ["int", "float", "double", "str", "unsigned", "long", "pointer"]:
@@ -271,21 +283,49 @@ def astree(data):
 					ret["NODE"] = arg
 					ret["TYPE"] = "VARDEF"
 
-
 			else:
 				try:
-					if ret["NODE"][1] == {"TYPE": "CF", "NODE": "<="}:
+					if ret["NODE"][1]["NODE"] == "->":
+						ret1, ret2 = ret["NODE"][0], ret["NODE"][2]
+						ret = {"LINE":ret["LINE"]}
 						ret["TYPE"] = "ASSIGNMENT"
-						ret["NODE"] = [ret["NODE"][0], ret["NODE"][2]]
+						if ret1["TYPE"] == "FUNCTIONCALL":
+							ret1 = {"TYPE":"VARIABLE", "NODE":ret1["NODE"]}
+						ret["NODE"] = [ret1, ret2]
+						return ret
+
 				except IndexError:
 					pass
+
+				if ret["NODE"][0]["TYPE"] == "FUNCTIONCALL":
+					try:
+						args = ret["NODE"][1:]
+					except IndexError:
+						return ret
+
+					ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": ret["NODE"][0]["NODE"], "LINE": ret["LINE"]}
+					i = 0
+					while i < len(args):
+						if args[i]["NODE"] == "<=":
+							try:
+								if args[i+2]["NODE"] == "->":
+									ret["ARGNAME"][args[i+1]["NODE"]] = args[i+3]["NODE"]
+									i += 4
+								else:
+									ret["ARGPOS"].append(args[i+1]["NODE"])
+									i += 1
+							except:
+								ret["ARGPOS"].append(args[i+1]["NODE"])
+								i += 1
+
+						i += 1
 
 
 	else:
 		if data[0] == "FUNCTION":
-			ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": data[1]}
+			ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": data[1], "LINE": data[2]}
 		else:
-			ret = {"TYPE": data[0], "NODE": data[1]}
+			ret = {"TYPE": data[0], "NODE": data[1], "LINE": data[2]}
 
 	return ret
 
@@ -296,9 +336,9 @@ def asttest(filename="test/test.hl"):
 		d = f.read()
 	print("\nRaw Tokens: \n")
 	tok = token(d)
-	for i in range(len(tok)):
-		print(f"' {tok[i]} '", end="")
-		if i != len(tok)-1:
+	for i in range(len(tok[0])):
+		print(f"' {tok[0][i]} '", end="")
+		if i != len(tok[0])-1:
 			print(", ", end="")
 
 	print("\n\nLexed Tokens: \n")

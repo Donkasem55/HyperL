@@ -1,9 +1,9 @@
 func main->int <= str:const argv <= int argc->5 {
 	%rax += 1;
-	%rbx <= (%rax + %rcx);
-	%rbx <= (%rax + (%rcx * %rdx));
-	%rbx <= ((%rax + %rbx) + (%rcx * (%rbx * %rdx)));
-	%rdx <= (2 %% 1);
+	%rbx -> (%rax + %rcx);
+	%rbx -> (%rax + (%rcx * %rdx));
+	%rbx -> ((%rax + %rbx) + (%rcx * (%rbx * %rdx)));
+	%rdx -> (2 %% 1);
 
 	if (1 <== 2) {
 		do_something <= 5 <= arg->5;
@@ -21,6 +21,7 @@ func main->int <= str:const argv <= int argc->5 {
 	int:const f;
 	pointer:const s <- r;
 
-	%rax <= 0;
+	y -> 5.3;
+	%rax -> 0;
 	exit;
 }

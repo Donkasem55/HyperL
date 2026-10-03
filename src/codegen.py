@@ -55,9 +55,9 @@ def test(filename="test/test.hl"):
 		d = f.read()
 	print("\nRaw Tokens: \n")
 	tok = token(d)
-	for i in range(len(tok)):
-		print(f"' {tok[i]} '", end="")
-		if i != len(tok)-1:
+	for i in range(len(tok[0])):
+		print(f"' {tok[0][i]} '", end="")
+		if i != len(tok[0])-1:
 			print(", ", end="")
 
 	print("\n\nLexed Tokens: \n")

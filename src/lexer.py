@@ -21,8 +21,10 @@ INSOPRKEY = ["+=", "-=", "*=", "/=", "<<=", ">>=", "//=", "%="]
 
 def token(data):
 	ret = [""]
+	clarr = [1]
 	flag = [False, False, False]
 	j = 0
+	l = 1
 	while j < len(data):
 		i = data[j]
 		if strifin(i, PUNClist):
@@ -32,6 +34,7 @@ def token(data):
 				ret[-1] += i
 			else:
 				ret.append(i)
+				clarr.append(l)
 
 		elif i == " ":
 			if flag[1] or flag[2]:
@@ -40,6 +43,7 @@ def token(data):
 				ret[-1] += i
 			else:
 				ret.append("")
+				clarr.append(l)
 
 		elif i == "/":
 			if flag[0]:
@@ -65,14 +69,18 @@ def token(data):
 							ret[-1] += i
 						else:
 							ret.append(i)
+							clarr.append(l)
 
 					except IndexError:
 						ret.append(i)
+						clarr.append(l)
 
 
 		elif i == "\n":
 			flag[0], flag[1], = False, False
 			ret.append("")
+			clarr.append(l)
+			l += 1
 
 		elif strifin(i, "=><-!" + OPR + PUNClist):
 			if flag[1] or flag[2]:
@@ -89,8 +97,10 @@ def token(data):
 					ret[-1] += i
 				else:
 					ret.append(i)
+					clarr.append(l)
 			except IndexError:
 				ret.append(i)
+				clarr.append(l)
 
 		elif i == '"':
 			if flag[1] or flag[2]:
@@ -100,10 +110,12 @@ def token(data):
 				flag[0] = False
 				ret[-1] += '"'
 				ret.append("")
+				clarr.append(l)
 
 			else:
 				flag[0] = True
 				ret.append('"')
+				clarr.append(l)
 
 		elif i == "\t":
 			if flag[0]:
@@ -122,6 +134,7 @@ def token(data):
 			try:
 				if strifin(ret[-1][-1], "=><-" + OPR + PUNClist):
 					ret.append(i)
+					clarr.append(l)
 				else:
 					ret[-1] += i
 
@@ -129,77 +142,88 @@ def token(data):
 				ret[-1] += i
 
 		j += 1
-	
-	while "" in ret:
-		ret.remove("")
 
-	return ret
+	print(ret, clarr)
+	k = len(ret)
+	i = 0
+	while i < k:
+		if ret[i] == "":
+			ret.pop(i)
+			clarr.pop(i)
+			k -= 1
+			continue
+		i += 1
+
+	return (ret, clarr)
 
 def lexer(data):
+	lines = data[1]
+	data = data[0]
 	j = 0
 	ret = [("", "")]
 	while j < len(data):
 		i = data[j]
+		l = lines[j]
 		t = prim_det(i)
 		if t != False:
-			ret.append(t)
+			ret.append(t + tuple([l]))
 			j += 1
 			continue
 
 		if i in KWlist:
-			ret.append(keyword(i))
+			ret.append(keyword(i) + tuple([l]))
 
 		elif i in BOOLlist:
-			ret.append(bl(i))
+			ret.append(bl(i) + tuple([l]))
 
 		elif i in CFlist:
-			ret.append(cf(i))
+			ret.append(cf(i) + tuple([l]))
 
 		elif i[0] == "%":
 			if len(i) > 1:
 				if i[1] == "%":
-					ret.append(("OPERATION", "%"))
+					ret.append(("OPERATION", "%", l))
 				else:
-					ret.append(reg(i[1:]))
+					ret.append(reg(i[1:]) + tuple([l]))
 
 		elif i in OPRKEY:
-			ret.append(("OPERATION", i))
+			ret.append(("OPERATION", i) + tuple([l]))
 
 		elif i in INSOPRKEY:
-			ret.append(("UNARY", i))
+			ret.append(("UNARY", i) + tuple([l]))
 
 		elif strifin(i, PUNClist):
 			if i == "(":
-				ret.append(("LPAREN", i))
+				ret.append(("LPAREN", i) + tuple([l]))
 			elif i == ")":
-				ret.append(("RPAREN", i))
+				ret.append(("RPAREN", i) + tuple([l]))
 			elif i == "{":
-				ret.append(("LCURLB", i))
+				ret.append(("LCURLB", i) + tuple([l]))
 			elif i == "}":
-				ret.append(("RCURLB", i))
+				ret.append(("RCURLB", i) + tuple([l]))
 			elif i == "[":
-				ret.append(("LSQBRAC", i))
+				ret.append(("LSQBRAC", i) + tuple([l]))
 			elif i == "]":
-				ret.append(("RSQBRAC", i))
+				ret.append(("RSQBRAC", i) + tuple([l]))
 
 			elif i == "$":
-				ret.append(("DOLLAR", i))
+				ret.append(("DOLLAR", i) + tuple([l]))
 			elif i == ":":
-				ret.append(("COLON", i))
+				ret.append(("COLON", i) + tuple([l]))
 			elif i == ";":
-				ret.append(("SEMICOLON", i))
+				ret.append(("SEMICOLON", i) + tuple([l]))
 			elif i == ",":
-				ret.append(("COMMA", i))
+				ret.append(("COMMA", i) + tuple([l]))
 
 			else:
-				ret.append(("PUNC", i))
+				ret.append(("PUNC", i) + tuple([l]))
 
 		else:
 			if ret[-1][0] in ["SEMICOLON"] or strifin(ret[-1][1], HYPERPUNClist) or ret[-1][1] in FNKWlist:
-				ret.append(func(i))
+				ret.append(func(i) + tuple([l]))
 
 			else:
-				ret.append(var(i))
+				ret.append(var(i) + tuple([l]))
 
 		j += 1
 
@@ -219,9 +243,9 @@ def lextest(filename="test/test.hl"):
 		d = f.read()
 	print("\nTokenised Array: \n")
 	tok = token(d)
-	for i in range(len(tok)):
-		print(f"' {tok[i]} '", end="")
-		if i != len(tok)-1:
+	for i in range(len(tok[0])):
+		print(f"' {tok[0][i]} '", end="")
+		if i != len(tok[0])-1:
 			print(", ", end="")
 
 	print("\n\nLexed Abstract Tokens: \n")
