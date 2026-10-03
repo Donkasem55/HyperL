@@ -88,7 +88,7 @@ def astree(data):
 					i += 1
 
 				for j in args:
-					arg = {"const":False,"readonly":False,"DATATYPE":""}
+					arg = {"const":False,"readonly":False,"DATATYPE":"","local":True}
 					i = 0
 					while i < len(j):
 						if j[i][1] == "int":
@@ -224,7 +224,7 @@ def astree(data):
 
 			elif ret["NODE"][0]["TYPE"] == "KEYWORD":
 				if ret["NODE"][0]["NODE"] in ["int", "float", "double", "str", "unsigned", "long", "pointer"]:
-					arg = {"const":False,"readonly":False,"DATATYPE":""}
+					arg = {"const":False,"readonly":False,"DATATYPE":"","local":False}
 					j = ret["NODE"]
 					i = 0
 					while i < len(j):
