@@ -303,7 +303,7 @@ def astree(data):
 								arg[j[i+1]["NODE"]] = True
 
 						elif j[i]["NODE"] == "<-":
-							arg["DEFAULT"] = j[i+1]["NODE"]
+							arg["DEFAULT"] = {"TYPE":"ADDRESS", "NODE":f"{j[i+1]["NODE"]}"}
 							arg["DATATYPE"] = "PTR"
 
 						elif j[i]["NODE"] == "->":
