@@ -3,10 +3,11 @@ from AST import cstree, astree
 import pprint
 
 var = {}
+local = [{}]
 gi = 0
 
 def gencode(data):
-	global gi, var, constvar, rovar
+	global gi, var, constvar, rovar, local
 	progdata, rodata, bss, code = [], [], [], []
 	if data["TYPE"] == "LIST":
 		for i in data["NODE"]:
@@ -20,24 +21,62 @@ def gencode(data):
 		add = []
 		datatype = data["NODE"]["DATATYPE"]
 		default = data["NODE"]["DEFAULT"]
+		deref = False
+		if type(default) is dict:
+			if default["TYPE"] == "DEREF":
+				default = 0
+				if data["local"]:
+					deref = True
+				else:
+					code.append(["lea", ("var",  f"_{data["NODE"]["NAME"]}"), ("var", f"_{default["NODE"]}")])
+.
+			elif default["TYPE"] == "ADDRESS":
+				default = f"_{default["NODE"]}"
+
 		if datatype in ["INT", "UNSIGNED"]:
-			add.append(["word", f"_{data["NODE"]["NAME"]}", default])
+			add.append([2, f"_{data["NODE"]["NAME"]}", [default]])
 		elif datatype in ["LONG", "UNSIGNEDLONG"]:
-			add.append(["dword", f"_{data["NODE"]["NAME"]}", default])
+			add.append([4, f"_{data["NODE"]["NAME"]}", [default]])
 		elif datatype in ["LONGLONG", "UNSIGNEDLONGLONG"]:
-			add.append(["quadword", f"_{data["NODE"]["NAME"]}", default])
+			add.append([8, f"_{data["NODE"]["NAME"]}", [default]])
 		elif datatype == "FLOAT":
-			add.append(["dword", f"_{data["NODE"]["NAME"]}", default])
+			add.append([4, f"_{data["NODE"]["NAME"]}", [default]])
 		elif datatype == "DOUBLE":
-			add.append(["quadword", f"_{data["NODE"]["NAME"]}", default])
+			add.append([8, f"_{data["NODE"]["NAME"]}", [default]])
 		elif datatype == "STR":
-			add.append(["byte", f"gi{gi}", [ord(i) for i in default] + [0]])
-			add.append(["pointer", f"_{data["NODE"]["NAME"]}", f"gi{gi}"])
+			add.append([1, f"gi{gi}", [ord(i) for i in default] + [0]])
+			add.append(["ptrsize", f"_{data["NODE"]["NAME"]}", [f"gi{gi}"]])
 			gi += 1
 		elif datatype == "PTR":
-			add.append(["pointer", f"_{data["NODE"]["NAME"]}", default])
+			add.append(["ptrsize", f"_{data["NODE"]["NAME"]}", [default]])
 
-		if data["NODE"]["readonly"] == True:
+		if data["NODE"]["local"] == True:
+			code.append(["sub", ("reg", "ptr_stack"), ("val", add[0])])
+
+			if add[0] == "ptrsize":
+				for i in local[-1]:
+					local[-1][i][1][1] -= 1
+			else:
+				for j in add:
+					for i in local[-1]:
+						local[-1][i][1][0] -= j[0]
+			j = 0
+			for i in range(len(add)):
+				if add[i][0] == "ptrsize":
+					if deref:
+						code.append(["lea", ("mem_stack", "+", 0), f"_{default["NODE"]}"])
+					else:
+						code.append(["mov ptrsize", ("mem_stack", "+", 0), ("val", default)])
+					local[-1][data["NODE"]["NAME"]] = ["ptrsize", [0, 0], data["NODE"]["readonly"] or data["NODE"]["const"]]
+					code.append(["register_local", f"_{data["NODE"]["NAME"]}", "ptrsize"])
+				else:
+					for k in add[i][2]:
+						code.append([f"mov {add[i][0]}", ("mem_stack", "+", j), ("val", k)])
+						code.append(["register_local", f"_{data["NODE"]["NAME"]}", add[i][0]])
+						local[-1][add[i][1]] = [add[i][0], [j, 0], data["NODE"]["readonly"] or data["NODE"]["const"]]
+						j += add[i][0]
+
+		elif data["NODE"]["readonly"] == True:
 			var[data["NODE"]["NAME"]] = (datatype, "RO")
 			rodata += add
 		elif data["NODE"]["const"] == True:

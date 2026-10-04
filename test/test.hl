@@ -21,6 +21,10 @@ func main->int <= str:const argv <= int argc->5 {
 	str g -> "Anarchy";
 	int:const f;
 	pointer:const s <- r;
+	pointer:const u -> &r;
+	int:const t -> *s;
+
+	int:local v -> 5;
 
 	y -> 5.3;
 	%rax -> 0;

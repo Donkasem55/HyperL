@@ -64,7 +64,17 @@ def astree(data):
 	ret = {}
 	if type(data) is list:
 		try:
-			if data[0][1] == "func":
+			if data[0] == "*":
+				ret["TYPE"] = "DEREF"
+				ret["NODE"] = data[1]
+				return ret
+
+			elif data[0] == "&":
+				ret["TYPE"] = "ADDRESS"
+				ret["NODE"] = data[1]
+				return ret
+
+			elif data[0][1] == "func":
 				ret["TYPE"] = "FUNCDEF"
 				ret["NODE"] = data[1][1]
 				ret["LINE"] = data[0][2]
@@ -297,9 +307,13 @@ def astree(data):
 							arg["DATATYPE"] = "PTR"
 
 						elif j[i]["NODE"] == "->":
-							arg["DEFAULT"] = j[i+1]["NODE"]
+							g = [k["NODE"] for k in j[i+1:]]
+							if len(g) > 1:
+								arg["DEFAULT"] = astree(g)
+							else:
+								arg["DEFAULT"] = j[i+1]["NODE"]
 
-						elif j[i]["TYPE"] == "VARIABLE" and j[i-1]["TYPE"] != "CF":
+						elif j[i]["TYPE"] == "VARIABLE" and j[i-1]["TYPE"] not in ["CF", "OPERATION"]:
 							arg["NAME"] = j[i]["NODE"]
 
 						arg["DATATYPE"] = arg["DATATYPE"].replace("LONGINT", "LONG")
@@ -313,7 +327,9 @@ def astree(data):
 			else:
 				try:
 					if ret["NODE"][1]["NODE"] == "->":
-						ret1, ret2 = ret["NODE"][0], ret["NODE"][2]
+						ret1, ret2 = ret["NODE"][0], ret["NODE"][2:]
+						if len(ret2) > 1:
+							ret2 = astree(ret2)
 						ret = {"LINE":ret["LINE"]}
 						ret["TYPE"] = "ASSIGNMENT"
 						if ret1["TYPE"] == "FUNCTIONCALL":
