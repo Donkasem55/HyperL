@@ -16,8 +16,8 @@ PUNClist = ";,:$(){}[]"
 HYPERPUNClist = "{}"
 SEMICOLON = ("SEMICOLON", ";")
 OPR = "+-*/&"
-OPRKEY = ["+", "-", "*", "/", "&&", "&", "//", "%", "<<", ">>"]
-INSOPRKEY = ["+=", "-=", "*=", "/=", "<<=", ">>=", "//=", "%="]
+OPRKEY = ["+", "-", "*", "/", "&&", "&", "\\", "%", "<<", ">>"]
+INSOPRKEY = ["+=", "-=", "*=", "/=", "<<=", ">>=", "\\=", "%="]
 
 def token(data):
 	ret = [""]
@@ -143,7 +143,6 @@ def token(data):
 
 		j += 1
 
-	print(ret, clarr)
 	k = len(ret)
 	i = 0
 	while i < k:

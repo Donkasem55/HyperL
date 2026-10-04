@@ -4,6 +4,7 @@ func main->int <= str:const argv <= int argc->5 {
 	%rbx -> (%rax + (%rcx * %rdx));
 	%rbx -> ((%rax + %rbx) + (%rcx * (%rbx * %rdx)));
 	%rdx -> (2 %% 1);
+	%rcx -> ((5 * 3) + (3 \ 2));
 
 	if (1 <== 2) {
 		do_something <= 5 <= arg->5;

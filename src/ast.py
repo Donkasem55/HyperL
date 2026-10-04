@@ -137,6 +137,7 @@ def astree(data):
 
 		else:
 			ret["TYPE"] = "LIST"
+			ret["LINE"] = data[0][0][2]
 
 		ret["NODE"] = []
 		for j in range(len(data)):
@@ -149,31 +150,59 @@ def astree(data):
 		else:
 			if ret["NODE"][1]["TYPE"] == "OPERATION":
 				t = ret["NODE"][1]["NODE"]
+				ft = "INT"
+				nb = 1
+				r = 0
+				a, b = ret["NODE"][0], ret["NODE"][2]
+				if a["TYPE"] in ["INT", "FLOAT", "DOUBLE"] and b["TYPE"] in ["INT", "FLOAT", "DOUBLE"]:
+					r = a["NODE"]
+					nb = b["NODE"]
+
+				if a["TYPE"] == "FLOAT" or b["TYPE"] == "FLOAT":
+					ft = "FLOAT"
+					
+				if a["TYPE"] == "DOUBLE" or b["TYPE"] == "DOUBLE":
+					ft = "DOUBLE"
 
 				ret["TYPE"] = "MATH_BINARY"
 				ret["OPERATION"] = t
 				if t == "+":
 					ret["OPERATION"] = "PLUS"
+					r += nb
 				elif t == "-":
 					ret["OPERATION"] = "SUBTRACT"
+					r -= nb
 				elif t == "*":
 					ret["OPERATION"] = "MULTIPLY"
+					r *= nb
 				elif t == "/":
 					ret["OPERATION"] = "DIVIDE"
-				elif t == "//":
+					ft = "DOUBLE"
+					r /= nb
+				elif t == "\\":
 					ret["OPERATION"] = "INTDIV"
+					r //= nb
 				elif t == "&&":
 					ret["OPERATION"] = "BOOLAND"
+					r = r and nb
 				elif t == "&":
 					ret["OPERATION"] = "AND"
+					r = r & nb
 				elif t == "%":
 					ret["OPERATION"] = "MODULO"
+					r = r % nb
 				elif t == "<<":
 					ret["OPERATION"] = "SHL"
+					r = r << nb
 				elif t == ">>":
 					ret["OPERATION"] = "SHR"
+					r = r >> nb
 
-				ret["NODE"].pop(1)
+				if a["TYPE"] in ["INT", "FLOAT", "DOUBLE"] and b["TYPE"] in ["INT", "FLOAT", "DOUBLE"]:
+					ret = {"TYPE":ft, "NODE":r, "LINE":ret["LINE"]}
+
+				else:
+					ret["NODE"].pop(1)
 
 			elif ret["NODE"][1]["TYPE"] == "BOOL":
 				t = ret["NODE"][1]["NODE"]
@@ -208,12 +237,10 @@ def astree(data):
 					ret["OPERATION"] = "MULTIPLY"
 				elif t == "/=":
 					ret["OPERATION"] = "DIVIDE"
-				elif t == "//=":
+				elif t == "\\=":
 					ret["OPERATION"] = "INTDIV"
 				elif t == "&=":
 					ret["OPERATION"] = "AND"
-				elif t == "//=":
-					ret["OPERATION"] = "INTDIV"
 				elif t == "%=":
 					ret["OPERATION"] = "MODULO"
 				elif t == "<<=":
