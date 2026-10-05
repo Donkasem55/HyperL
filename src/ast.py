@@ -263,11 +263,11 @@ def astree(data):
 
 
 		if ret["TYPE"] == "EXPR":
-			if ret["NODE"][0] == {"TYPE": "KEYWORD", "NODE": "if"}:
+			if ret["NODE"][0]["NODE"] == "if":
 				ret["TYPE"] = "IF"
 				ret["NODE"] = ret["NODE"][1]
 
-			elif ret["NODE"][0] == {"TYPE": "KEYWORD", "NODE": "while"}:
+			elif ret["NODE"][0]["NODE"] == "while":
 				ret["TYPE"] = "WHILE"
 				ret["NODE"] = ret["NODE"][1]
 

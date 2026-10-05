@@ -5,17 +5,47 @@ import pprint
 var = {}
 local = [{}]
 gi = 0
+func = {}
 
 def gencode(data):
 	global gi, var, constvar, rovar, local
 	progdata, rodata, bss, code = [], [], [], []
 	if data["TYPE"] == "LIST":
-		for i in data["NODE"]:
-			a, b, c, d = gencode(i)
-			progdata += a
-			rodata += b
-			bss += c
-			code += d
+		j = 0
+		while j < len(data["NODE"]):
+			i = data["NODE"][j]
+			if i["TYPE"] == "IF":
+				a, b, c, d = gencode(i["NODE"])
+				progdata += a
+				rodata += b
+				bss += c
+				code += d
+
+				j += 1
+				a, b, c, d = gencode(data["NODE"][j])
+				code += [["jne", ("label", f"gi{gi}")]]
+				progdata += a
+				rodata += b
+				bss += c
+				code += d
+				code += [["label", f"gi{gi}"]]
+
+			elif i["TYPE"] == "FUNCDEF":
+				args = {}
+				for k in i["ARGS"]:
+					args[k["NAME"]] = k
+
+				func[i["NODE"]] = args
+				code += [["label", f"_{i["NODE"]}"]]
+
+			else:
+				a, b, c, d = gencode(i)
+				progdata += a
+				rodata += b
+				bss += c
+				code += d
+
+			j += 1
 
 	elif data["TYPE"] == "VARDEF":
 		add = []
