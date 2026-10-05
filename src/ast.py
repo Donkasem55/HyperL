@@ -271,6 +271,10 @@ def astree(data):
 				ret["TYPE"] = "WHILE"
 				ret["NODE"] = ret["NODE"][1]
 
+			elif ret["NODE"][0]["NODE"] == "for":
+				ret["TYPE"] = "FOR"
+				ret["NODE"] = ret["NODE"][1]
+
 			elif ret["NODE"][0]["TYPE"] == "KEYWORD":
 				if ret["NODE"][0]["NODE"] in ["int", "float", "double", "str", "unsigned", "long", "pointer"]:
 					arg = {"const":False,"readonly":False,"DATATYPE":"","local":False}
@@ -369,6 +373,10 @@ def astree(data):
 			ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": data[1], "LINE": data[2]}
 		else:
 			ret = {"TYPE": data[0], "NODE": data[1], "LINE": data[2]}
+
+			if ret["TYPE"] == "KEYWORD":
+				if ret["NODE"] == "do":
+					ret["TYPE"] = "DO"
 
 	return ret
 

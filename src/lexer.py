@@ -8,7 +8,7 @@ from lex.bl import bl
 from lex.reg import reg
 from lex.var import var, func
 
-KWlist = ["func", "if", "while", "int", "float", "double", "str", "unsigned", "long", "const", "readonly", "pointer"] # keywords list
+KWlist = ["func", "if", "while", "for", "do", "int", "float", "double", "str", "unsigned", "long", "const", "readonly", "pointer"] # keywords list
 FNKWlist = ["func"] # function defining keywords list
 CFlist = ["=>", "<=", "->", "<-"] # controlflow list
 BOOLlist = ["==", "!=", "<==", ">==", "<", ">"]
