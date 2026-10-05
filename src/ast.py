@@ -99,7 +99,7 @@ def astree(data):
 					i += 1
 
 				for j in args:
-					arg = {"const":False,"readonly":False,"DATATYPE":"","local":True}
+					arg = {"const":False,"readonly":False,"DATATYPE":"","local":True,"DEFAULT":0}
 					i = 0
 					while i < len(j):
 						if j[i][1] == "int":

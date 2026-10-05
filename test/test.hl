@@ -1,4 +1,4 @@
-func main->int <= str:const argv <= int argc->5 {
+func main->int <= pointer:const argv <= int argc {
 	%rax += 1;
 	%rbx -> (%rax + %rcx);
 	%rbx -> (%rax + (%rcx * %rdx));

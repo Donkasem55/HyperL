@@ -36,7 +36,21 @@ def gencode(data):
 					args[k["NAME"]] = k
 
 				func[i["NODE"]] = args
-				code += [["label", f"_{i["NODE"]}"]]
+				if i["NODE"] != "main":
+					code += [["label", i["NODE"]]]
+				else:
+					code += [["label", f"_{i["NODE"]}"]]
+					code += [["push", ("reg", "bp")]]
+					code += [["mov ptrsize", ("reg", "bp"), ("reg", "sp")]]
+					code += [["add", ("reg", "bp"), ("ptrsize_2x")]]
+					l = 0
+					for k in i["ARGS"]:
+						e = {"TYPE":"VARDEF", "NODE":k}
+						e["NODE"]["local"] = False
+						d, c, ___, _ = gencode(e)
+						d += c
+						for b in d:
+							code += [["define_allocated_local", b]]
 
 			else:
 				a, b, c, d = gencode(i)
