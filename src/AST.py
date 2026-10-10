@@ -32,7 +32,10 @@ def cstree(data):
 						tmparr[-1].append(tmp2)
 				tmp2 = []
 				if tmp:
-					tmparr[-1][-1].append(tmp)
+					if tmparr[-1]:
+						tmparr[-1][-1].append(tmp)
+					else:
+						tmparr[-1].append(tmp)
 
 		elif i[0] == "LCURLB":
 			if tmp2:

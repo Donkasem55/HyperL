@@ -5,6 +5,7 @@ func main->int <= pointer:const argv <= int argc {
 	%rbx -> ((%rax + %rbx) + (%rcx * (%rbx * %rdx)));
 	%rdx -> (2 %% 1);
 	%rcx -> ((5 * 3) + (3 \ 2));
+	%rbx -> (%rax + %rbx) + (%rcx * (%rbx * %rdx));
 
 	if (1 <== 2) {
 		do_something <= 5 <= arg->5;
@@ -14,17 +15,20 @@ func main->int <= pointer:const argv <= int argc {
 	while (1 <== 2) {
 		do_something <= 5 <= arg->5;
 		do_other_thing <= 6;
+		%rax -> 0;
 	}
 
 	do {
 		do_something <= 5 <= arg->5;
 		do_other_thing <= 6;
+		%rax -> 0;
 	} while (1 <== 2);
 
 	%rax -> 0;
 	for (%rax <== 5; %rax += 1;) {
 		do_something <= 5 <= arg->5;
 		do_other_thing <= 6;
+		%rax -> 0;
 	}
 
 	int x:const -> 5;

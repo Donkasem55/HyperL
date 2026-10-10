@@ -23,6 +23,7 @@ def gencode(data):
 
 				j += 1
 				a, b, c, d = gencode(data["NODE"][j])
+				gi += 1
 				code += [["jne", ("label", f"gi{gi}")]]
 				progdata += a
 				rodata += b
@@ -30,27 +31,90 @@ def gencode(data):
 				code += d
 				code += [["label", f"gi{gi}"]]
 
+			elif i["TYPE"] == "WHILE":
+				a1, b1, c1, d1 = gencode(i["NODE"])
+
+				j += 1
+				a, b, c, d = gencode(data["NODE"][j])
+				gi += 1
+				code += [["label", f"gi{gi}"]]
+				progdata += a1
+				rodata += b1
+				bss += c1
+				code += d1
+				code += [["jne", ("label", f"gi{gi+1}")]]
+				progdata += a
+				rodata += b
+				bss += c
+				code += d
+				code += [["jmp", ("label", f"gi{gi}")]]
+				gi += 1
+				code += [["label", f"gi{gi}"]]
+
+			elif i["TYPE"] == "DO":
+				a1, b1, c1, d1 = gencode(data["NODE"][j+2]["NODE"])
+
+				j += 1
+				a, b, c, d = gencode(data["NODE"][j])
+				gi += 1
+				code += [["label", f"gi{gi}"]]
+				progdata += a
+				rodata += b
+				bss += c
+				code += d
+				progdata += a1
+				rodata += b1
+				bss += c1
+				code += d1
+				code += [["je", ("label", f"gi{gi}")]]
+				j += 1
+
 			elif i["TYPE"] == "FUNCDEF":
 				args = {}
 				for k in i["ARGS"]:
 					args[k["NAME"]] = k
 
 				func[i["NODE"]] = args
-				if i["NODE"] != "main":
-					code += [["label", i["NODE"]]]
-				else:
-					code += [["label", f"_{i["NODE"]}"]]
-					code += [["push", ("reg", "bp")]]
-					code += [["mov ptrsize", ("reg", "bp"), ("reg", "sp")]]
-					code += [["add", ("reg", "bp"), ("ptrsize_2x")]]
-					l = 0
-					for k in i["ARGS"]:
-						e = {"TYPE":"VARDEF", "NODE":k}
-						e["NODE"]["local"] = False
-						d, c, ___, _ = gencode(e)
-						d += c
-						for b in d:
-							code += [["define_allocated_local", b]]
+				code += [["label", f"_{i["NODE"]}"]]
+				code += [["push", ("reg", "bp")]]
+				code += [["mov ptrsize", ("reg", "bp"), ("reg", "sp")]]
+				code += [["add", ("reg", "bp"), ("ptrsize_2x")]]
+				l = 0
+				for k in i["ARGS"]:
+					e = {"TYPE":"VARDEF", "NODE":k}
+					e["NODE"]["local"] = False
+					d, c, ___, _ = gencode(e)
+					d += c
+					for b in d:
+						code += [["define_allocated_local", b]]
+
+			elif i["TYPE"] == "ASSIGNMENT":
+				node = i["NODE"][0]["NODE"]
+				default = i["NODE"][1]
+				if i["NODE"][0]["TYPE"] == "REGISTER":
+					code.append(["mov reg", f"{node}", default])
+					j += 1
+					continue
+				datatype = var[i["NODE"][0]["NODE"]][0]
+				if datatype in ["INT", "UNSIGNED"]:
+					code.append(["mov 2", f"_{node}", default])
+				elif datatype in ["LONG", "UNSIGNEDLONG"]:
+					code.append(["mov 4", f"_{node}", default])
+				elif datatype in ["LONGLONG", "UNSIGNEDLONGLONG"]:
+					code.append(["mov 8", f"_{node}", default])
+				elif datatype == "FLOAT":
+					code.append(["mov 4", f"_{node}", default])
+				elif datatype == "DOUBLE":
+					code.append(["mov 8", f"_{node}", default])
+				elif datatype == "STR":
+					gi += 1
+					progdata.append([1, f"gi{gi}", default])
+					code.append(["mov ptrsize", f"_{node}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
+				elif datatype == "PTR":
+					code.append(["mov ptrsize", f"_{node}", default])
+
+			elif i["TYPE"] == "BOOL_BINARY":
+				code.append(["bool_binary_operation", i])
 
 			else:
 				a, b, c, d = gencode(i)
@@ -86,9 +150,9 @@ def gencode(data):
 		elif datatype == "DOUBLE":
 			add.append([8, f"_{data["NODE"]["NAME"]}", default])
 		elif datatype == "STR":
+			gi += 1
 			add.append([1, f"gi{gi}", default])
 			add.append(["ptrsize", f"_{data["NODE"]["NAME"]}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
-			gi += 1
 		elif datatype == "PTR":
 			add.append(["ptrsize", f"_{data["NODE"]["NAME"]}", default])
 
@@ -105,6 +169,9 @@ def gencode(data):
 		else:
 			var[data["NODE"]["NAME"]] = (datatype, "MUT")
 			progdata += add
+
+	elif data["TYPE"] == "BOOL_BINARY":
+		code.append(["bool_binary_operation", data])
 
 	return progdata, rodata, bss, code
 

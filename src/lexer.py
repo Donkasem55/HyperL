@@ -160,6 +160,7 @@ def lexer(data):
 	data = data[0]
 	j = 0
 	ret = [("", "")]
+	ad = False
 	while j < len(data):
 		i = data[j]
 		l = lines[j]
@@ -177,6 +178,10 @@ def lexer(data):
 
 		elif i in CFlist:
 			ret.append(cf(i) + tuple([l]))
+			if i == "->" and data[j+1] not in ["*", "&"] and data[j+2] not in [";", "<="]:
+				print(data[j:j+3])
+				ret.append(("LPAREN", "(") + tuple([l]))
+				ad = True
 
 		elif i[0] == "%":
 			if len(i) > 1:
@@ -210,6 +215,9 @@ def lexer(data):
 			elif i == ":":
 				ret.append(("COLON", i) + tuple([l]))
 			elif i == ";":
+				if ad:
+					ret.append(("RPAREN", ")") + tuple([l]))
+					ad = False
 				ret.append(("SEMICOLON", i) + tuple([l]))
 			elif i == ",":
 				ret.append(("COMMA", i) + tuple([l]))
