@@ -7,7 +7,7 @@ local = [{}]
 gi = 0
 func = {}
 
-def gencode(data):
+def gencode(data, ptrsize):
 	global gi, var, constvar, rovar, local
 	progdata, rodata, bss, code = [], [], [], []
 	if data["TYPE"] == "LIST":
@@ -15,14 +15,14 @@ def gencode(data):
 		while j < len(data["NODE"]):
 			i = data["NODE"][j]
 			if i["TYPE"] == "IF":
-				a, b, c, d = gencode(i["NODE"])
+				a, b, c, d = gencode(i["NODE"], ptrsize)
 				progdata += a
 				rodata += b
 				bss += c
 				code += d
 
 				j += 1
-				a, b, c, d = gencode(data["NODE"][j])
+				a, b, c, d = gencode(data["NODE"][j], ptrsize)
 				gi += 1
 				code += [["jne", ("label", f"gi{gi}")]]
 				progdata += a
@@ -32,10 +32,10 @@ def gencode(data):
 				code += [["label", f"gi{gi}"]]
 
 			elif i["TYPE"] == "WHILE":
-				a1, b1, c1, d1 = gencode(i["NODE"])
+				a1, b1, c1, d1 = gencode(i["NODE"], ptrsize)
 
 				j += 1
-				a, b, c, d = gencode(data["NODE"][j])
+				a, b, c, d = gencode(data["NODE"][j], ptrsize)
 				gi += 1
 				code += [["label", f"gi{gi}"]]
 				progdata += a1
@@ -52,10 +52,10 @@ def gencode(data):
 				code += [["label", f"gi{gi}"]]
 
 			elif i["TYPE"] == "DO":
-				a1, b1, c1, d1 = gencode(data["NODE"][j+2]["NODE"])
+				a1, b1, c1, d1 = gencode(data["NODE"][j+2]["NODE"], ptrsize)
 
 				j += 1
-				a, b, c, d = gencode(data["NODE"][j])
+				a, b, c, d = gencode(data["NODE"][j], ptrsize)
 				gi += 1
 				code += [["label", f"gi{gi}"]]
 				progdata += a
@@ -77,13 +77,13 @@ def gencode(data):
 				func[i["NODE"]] = args
 				code += [["label", f"_{i["NODE"]}"]]
 				code += [["push", ("reg", "bp")]]
-				code += [["mov ptrsize", ("reg", "bp"), ("reg", "sp")]]
+				code += [[f"mov {ptrsize}", ("reg", "bp"), ("reg", "sp")]]
 				code += [["add", ("reg", "bp"), ("ptrsize_2x")]]
 				l = 0
 				for k in i["ARGS"]:
 					e = {"TYPE":"VARDEF", "NODE":k}
 					e["NODE"]["local"] = False
-					d, c, ___, _ = gencode(e)
+					d, c, ___, _ = gencode(e, ptrsize)
 					d += c
 					for b in d:
 						code += [["define_allocated_local", b]]
@@ -109,15 +109,15 @@ def gencode(data):
 				elif datatype == "STR":
 					gi += 1
 					progdata.append([1, f"gi{gi}", default])
-					code.append(["mov ptrsize", f"_{node}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
+					code.append([f"mov {ptrsize}", f"_{node}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
 				elif datatype == "PTR":
-					code.append(["mov ptrsize", f"_{node}", default])
+					code.append([f"mov {ptrsize}", f"_{node}", default])
 
 			elif i["TYPE"] == "BOOL_BINARY":
 				code.append(["bool_binary_operation", i])
 
 			else:
-				a, b, c, d = gencode(i)
+				a, b, c, d = gencode(i, ptrsize)
 				progdata += a
 				rodata += b
 				bss += c
@@ -152,9 +152,9 @@ def gencode(data):
 		elif datatype == "STR":
 			gi += 1
 			add.append([1, f"gi{gi}", default])
-			add.append(["ptrsize", f"_{data["NODE"]["NAME"]}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
+			add.append([ptrsize, f"_{data["NODE"]["NAME"]}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
 		elif datatype == "PTR":
-			add.append(["ptrsize", f"_{data["NODE"]["NAME"]}", default])
+			add.append([ptrsize, f"_{data["NODE"]["NAME"]}", default])
 
 		if data["NODE"]["local"] == True:
 			for i in add:
@@ -200,7 +200,7 @@ def test(filename="test/test.hl"):
 	pprint.pp(AST, width=120, indent=4)
 
 	print("\n\nGenerated Procedural Intermediate Representation:")
-	data, rodata, bss, code = gencode(AST)
+	data, rodata, bss, code = gencode(AST, 8)
 	print("\n.data:")
 	for i in data:
 		print("    ", i)
