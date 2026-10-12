@@ -100,6 +100,8 @@ def gencode(data, ptrsize):
 
 				for k in args:
 					local[-1][k] = args[k]
+					for m in localoffset[-1]:
+						localoffset[-1][m][0] += args[k][0]
 					localoffset[-1][k] = [0, args[k][1]]
 					argsoffset += args[k][0]
 				j += 1
@@ -107,7 +109,7 @@ def gencode(data, ptrsize):
 				offset = 0
 				for k in local[-1]:
 					for m in localoffset[-1]:
-						localoffset[-1][m][1] += local[-1][k][0]
+						localoffset[-1][m][0] += local[-1][k][0]
 					localoffset[-1][k] = [0, local[-1][k][1]]
 					offset += local[-1][k][0]
 
