@@ -1,3 +1,16 @@
+
+func do_something->int <= int a <= int arg {
+	%rax += 1;
+}
+
+func do_other_thing->int <= int a <= int arg->5 <= {
+	%rax += 1;
+}
+
+func exit->int <= {
+	%rax -> 0;
+}
+
 func main->int <= pointer:const argv <= int argc {
 	%rax += 1;
 	%rbx -> (%rax + %rcx);

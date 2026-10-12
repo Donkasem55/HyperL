@@ -139,6 +139,8 @@ def gencode(data, ptrsize):
 				local.pop(-1)
 				localoffset.pop(-1)
 
+			elif i["TYPE"] == "FUNCTIONCALL":
+				print(i)
 
 			elif i["TYPE"] == "ASSIGNMENT":
 				node = i["NODE"][0]["NODE"]
@@ -236,7 +238,7 @@ def gencode(data, ptrsize):
 
 def compiler(ast, ptrsize):
 	a, b, c, d = gencode(ast, ptrsize)
-	a.append([ptrsize, "TEMP", 0])
+	a.append([ptrsize, "TEMP", {"TYPE":"INT", "NODE":0}])
 	return a, b, c, d
 
 def test(filename="test/test.hl"):

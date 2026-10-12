@@ -39,7 +39,8 @@ def cstree(data):
 
 		elif i[0] == "LCURLB":
 			if tmp2:
-				tmparr[-1].append(tmp2)
+				tmp = tmparr[-1]
+				tmp.append(tmp2)
 			tmp2 = []
 			tmparr.append([])
 			tmparr2.append("CURL")
@@ -61,25 +62,36 @@ def cstree(data):
 		else:
 			tmp2.append(i)
 
-	return tmparr[0]
+	tmparr3 = []
+	for i in tmparr:
+		if i:
+			tmparr3 += i
+	return tmparr3
+
+functions = {}
+prev = None
 
 def astree(data):
+	global functions, prev
 	ret = {}
 	if type(data) is list:
 		try:
 			if data[0] == "*":
 				ret["TYPE"] = "DEREF"
 				ret["NODE"] = data[1]
+				prev = None
 				return ret
 
 			elif data[0] == "&":
 				ret["TYPE"] = "ADDRESS"
 				ret["NODE"] = data[1]
+				prev = None
 				return ret
 
 			elif data[0][1] == "func":
 				ret["TYPE"] = "FUNCDEF"
 				ret["NODE"] = data[1][1]
+				functions[ret["NODE"]] = []
 				ret["LINE"] = data[0][2]
 				ret["ARGS"] = []
 				args = []
@@ -100,6 +112,9 @@ def astree(data):
 						args[-1].append(data[i])
 
 					i += 1
+
+				if args[-1] == []:
+					args.pop(-1)
 
 				for j in args:
 					arg = {"const":False,"readonly":False,"DATATYPE":"","local":True,"DEFAULT":0}
@@ -135,11 +150,13 @@ def astree(data):
 
 						arg["DATATYPE"] = arg["DATATYPE"].replace("LONGINT", "LONG")
 						arg["DATATYPE"] = arg["DATATYPE"].replace("UNSIGNEDINT", "UNSIGNED")
+						functions[ret["NODE"]].append(arg)
 
 						i += 1
 
 					ret["ARGS"].append(arg)
 
+				prev = "func"
 				return ret
 
 		except:
@@ -158,7 +175,8 @@ def astree(data):
 			e = astree(i)
 			ret["NODE"].append(e)
 
-		if len(ret["NODE"]) == 1:
+		if len(ret["NODE"]) == 1 and prev != "func":
+			prev = None
 			return ret["NODE"][0]
 		else:
 			if ret["NODE"][1]["TYPE"] == "OPERATION":
@@ -342,6 +360,7 @@ def astree(data):
 						if ret1["TYPE"] == "FUNCTIONCALL":
 							ret1 = {"TYPE":"VARIABLE", "NODE":ret1["NODE"]}
 						ret["NODE"] = [ret1, ret2]
+						prev = None
 						return ret
 
 				except IndexError:
@@ -351,21 +370,23 @@ def astree(data):
 					try:
 						args = ret["NODE"][1:]
 					except IndexError:
+						prev = None
 						return ret
 
-					ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": ret["NODE"][0]["NODE"], "LINE": ret["LINE"]}
+					ret = {"TYPE": "FUNCTIONCALL", "ARGS": {}, "NODE": ret["NODE"][0]["NODE"], "LINE": ret["LINE"]}
 					i = 0
+					a = 0
 					while i < len(args):
 						if args[i]["NODE"] == "<=":
 							try:
 								if args[i+2]["NODE"] == "->":
-									ret["ARGNAME"][args[i+1]["NODE"]] = args[i+3]["NODE"]
+									ret["ARGS"][args[i+1]["NODE"]] = args[i+3]["NODE"]
 									i += 4
 								else:
-									ret["ARGPOS"].append(args[i+1]["NODE"])
+									ret["ARGS"][functions[ret["NODE"]][a]["NAME"]] = args[i+1]["NODE"]
 									i += 1
 							except:
-								ret["ARGPOS"].append(args[i+1]["NODE"])
+								ret["ARGS"][functions[ret["NODE"]][a]["NAME"]] = args[i+1]["NODE"]
 								i += 1
 
 						i += 1
@@ -373,7 +394,7 @@ def astree(data):
 
 	else:
 		if data[0] == "FUNCTION":
-			ret = {"TYPE": "FUNCTIONCALL", "ARGPOS": [], "ARGNAME": {}, "NODE": data[1], "LINE": data[2]}
+			ret = {"TYPE": "FUNCTIONCALL", "ARGS": {}, "NODE": data[1], "LINE": data[2]}
 		else:
 			ret = {"TYPE": data[0], "NODE": data[1], "LINE": data[2]}
 
@@ -381,6 +402,7 @@ def astree(data):
 				if ret["NODE"] == "do":
 					ret["TYPE"] = "DO"
 
+	prev = None
 	return ret
 
 
