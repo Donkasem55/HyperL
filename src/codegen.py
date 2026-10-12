@@ -3,7 +3,8 @@ from AST import cstree, astree
 import pprint
 
 var = {}
-local = [{}]
+local = []
+localoffset = []
 gi = 0
 func = {}
 
@@ -70,29 +71,72 @@ def gencode(data, ptrsize):
 				j += 1
 
 			elif i["TYPE"] == "FUNCDEF":
+				local.append(dict())
+				localoffset.append(dict())
 				args = {}
+				argsoffset = 0
 				for k in i["ARGS"]:
 					args[k["NAME"]] = k
-
 				func[i["NODE"]] = args
+
+				for k in args:
+					datatype = args[k]["DATATYPE"]
+					default = args[k]["DEFAULT"]
+					if datatype in ["INT", "UNSIGNED"]:
+						datatype = 2
+					elif datatype in ["LONG", "UNSIGNEDLONG"]:
+						datatype = 4
+					elif datatype in ["LONGLONG", "UNSIGNEDLONGLONG"]:
+						datatype = 8
+					elif datatype == "FLOAT":
+						datatype = 4
+					elif datatype == "DOUBLE":
+						datatype = 8
+					elif datatype == "STR":
+						datatype = ptrsize
+					elif datatype == "PTR":
+						datatype = ptrsize
+					args[k] = (datatype, default)
+
+				for k in args:
+					local[-1][k] = args[k]
+					localoffset[-1][k] = [0, args[k][1]]
+					argsoffset += args[k][0]
+				j += 1
+				a, b, c, d = gencode(data["NODE"][j], ptrsize)
+				offset = 0
+				for k in local[-1]:
+					for m in localoffset[-1]:
+						localoffset[-1][m][1] += local[-1][k][0]
+					localoffset[-1][k] = [0, local[-1][k][1]]
+					offset += local[-1][k][0]
+
 				code += [["label", f"_{i["NODE"]}"]]
+				code += [[f"mov {ptrsize}", "TEMP", ("reg", "r1")]]
+				code += [["pull", ("reg", "r1")]]
+				code += [["add", ("reg", "sp"), {"TYPE":"INT", "NODE":argsoffset+2*ptrsize}]]
+				code += [["push", ("reg", "r1")]]
 				code += [["push", ("reg", "bp")]]
-				code += [[f"mov {ptrsize}", ("reg", "bp"), ("reg", "sp")]]
-				code += [["add", ("reg", "bp"), ("ptrsize_2x")]]
+				code += [["sub", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
+				code += [[f"mov reg", ("reg", "r1"), "TEMP"]]
+				code += [[f"mov reg", ("reg", "bp"), ("reg", "sp")]]
 				l = 0
-				for k in i["ARGS"]:
-					e = {"TYPE":"VARDEF", "NODE":k}
-					e["NODE"]["local"] = False
-					d, c, ___, _ = gencode(e, ptrsize)
-					d += c
-					for b in d:
-						code += [["define_allocated_local", b]]
+				progdata += a
+				rodata += b
+				bss += c
+				code += d
+				code += [["add", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
+				code += [["pull", ("reg", "bp")]]
+				code += [["ret"]]
+				local.pop(-1)
+				localoffset.pop(-1)
+
 
 			elif i["TYPE"] == "ASSIGNMENT":
 				node = i["NODE"][0]["NODE"]
 				default = i["NODE"][1]
 				if i["NODE"][0]["TYPE"] == "REGISTER":
-					code.append(["mov reg", f"{node}", default])
+					code.append(["mov reg_abs", f"{node}", default])
 					j += 1
 					continue
 				datatype = var[i["NODE"][0]["NODE"]][0]
@@ -140,25 +184,33 @@ def gencode(data, ptrsize):
 			default = {"TYPE":datatype, "NODE":default}
 
 		if datatype in ["INT", "UNSIGNED"]:
+			datatype = 2
 			add.append([2, f"_{data["NODE"]["NAME"]}", default])
 		elif datatype in ["LONG", "UNSIGNEDLONG"]:
+			datatype = 4
 			add.append([4, f"_{data["NODE"]["NAME"]}", default])
 		elif datatype in ["LONGLONG", "UNSIGNEDLONGLONG"]:
+			datatype = 8
 			add.append([8, f"_{data["NODE"]["NAME"]}", default])
 		elif datatype == "FLOAT":
+			datatype = 4
 			add.append([4, f"_{data["NODE"]["NAME"]}", default])
 		elif datatype == "DOUBLE":
+			datatype = 8
 			add.append([8, f"_{data["NODE"]["NAME"]}", default])
 		elif datatype == "STR":
+			datatype = ptrsize
 			gi += 1
 			add.append([1, f"gi{gi}", default])
 			add.append([ptrsize, f"_{data["NODE"]["NAME"]}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}])
 		elif datatype == "PTR":
+			datatype = ptrsize
 			add.append([ptrsize, f"_{data["NODE"]["NAME"]}", default])
 
 		if data["NODE"]["local"] == True:
 			for i in add:
 				code.append(["register_local", i])
+				local[-1][i[1]] = (datatype, default["NODE"])
 
 		elif data["NODE"]["readonly"] == True:
 			var[data["NODE"]["NAME"]] = (datatype, "RO")
@@ -174,6 +226,11 @@ def gencode(data, ptrsize):
 		code.append(["bool_binary_operation", data])
 
 	return progdata, rodata, bss, code
+
+def compiler(ast, ptrsize):
+	a, b, c, d = gencode(ast, ptrsize)
+	a.append([ptrsize, "TEMP", 0])
+	return a, b, c, d
 
 def test(filename="test/test.hl"):
 	# the AST tester
@@ -200,7 +257,7 @@ def test(filename="test/test.hl"):
 	pprint.pp(AST, width=120, indent=4)
 
 	print("\n\nGenerated Procedural Intermediate Representation:")
-	data, rodata, bss, code = gencode(AST, 8)
+	data, rodata, bss, code = compiler(AST, 8)
 	print("\n.data:")
 	for i in data:
 		print("    ", i)
@@ -213,6 +270,8 @@ def test(filename="test/test.hl"):
 	print("\n.text:")
 	for i in code:
 		print("    ", i)
+
+	print(local)
 
 	print("\n\nMade by Raine (TheLuckyCuber999)\n\n") # you can delete this line if you want to, since it's public domain, but please don't :(
 
