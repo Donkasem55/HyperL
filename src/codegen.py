@@ -120,8 +120,14 @@ def gencode(data, ptrsize):
 				code += [["push", ("reg", "r1")]]
 				code += [["push", ("reg", "bp")]]
 				code += [["sub", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
-				code += [[f"mov reg", ("reg", "r1"), "TEMP"]]
-				code += [[f"mov reg", ("reg", "bp"), ("reg", "sp")]]
+				code += [["mov reg", ("reg", "bp"), ("reg", "sp")]]
+
+				for k in local[-1]:
+					if k not in args:
+						code += [["mov reg", ("reg", "r1"), local[-1][k][2]]]
+						code += [[f"mov {local[-1][k][0]}", ("offset", "bp", localoffset[-1][k][0]), ("reg", "r1")]]
+
+				code += [["mov reg", ("reg", "r1"), "TEMP"]]
 				l = 0
 				progdata += a
 				rodata += b
@@ -211,8 +217,7 @@ def gencode(data, ptrsize):
 
 		if data["NODE"]["local"] == True:
 			for i in add:
-				code.append(["register_local", i])
-				local[-1][i[1]] = (datatype, default["NODE"])
+				local[-1][i[1]] = (datatype, default["NODE"], default)
 
 		elif data["NODE"]["readonly"] == True:
 			var[data["NODE"]["NAME"]] = (datatype, "RO")
