@@ -380,13 +380,13 @@ def astree(data):
 						if args[i]["NODE"] == "<=":
 							try:
 								if args[i+2]["NODE"] == "->":
-									ret["ARGS"][args[i+1]["NODE"]] = args[i+3]["NODE"]
+									ret["ARGS"][args[i+1]["NODE"]] = args[i+3]
 									i += 4
 								else:
-									ret["ARGS"][functions[ret["NODE"]][a]["NAME"]] = args[i+1]["NODE"]
+									ret["ARGS"][functions[ret["NODE"]][a]["NAME"]] = args[i+1]
 									i += 1
 							except:
-								ret["ARGS"][functions[ret["NODE"]][a]["NAME"]] = args[i+1]["NODE"]
+								ret["ARGS"][functions[ret["NODE"]][a]["NAME"]] = args[i+1]
 								i += 1
 
 						i += 1

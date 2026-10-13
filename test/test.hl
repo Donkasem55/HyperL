@@ -13,12 +13,8 @@ func exit->int <= {
 
 func main->int <= pointer:const argv <= int argc {
 	%rax += 1;
-	%rbx -> (%rax + %rcx);
-	%rbx -> (%rax + (%rcx * %rdx));
 	%rbx -> ((%rax + %rbx) + (%rcx * (%rbx * %rdx)));
-	%rdx -> (2 %% 1);
 	%rcx -> ((5 * 3) + (3 \ 2));
-	%rbx -> (%rax + %rbx) + (%rcx * (%rbx * %rdx));
 
 	if (1 <== 2) {
 		do_something <= 5 <= arg->5;
@@ -37,29 +33,18 @@ func main->int <= pointer:const argv <= int argc {
 		%rax -> 0;
 	} while (1 <== 2);
 
-	%rax -> 0;
 	for (%rax <== 5; %rax += 1;) {
 		do_something <= 5 <= arg->5;
 		do_other_thing <= 6;
 		%rax -> 0;
 	}
 
-	int x:const -> 5;
-	unsigned p:const -> 5;
-	unsigned int r:readonly -> 5;
 	double y -> 5.5;
-	unsigned long long:readonly z -> 500000;
-	float w -> 5.4f;
 	long long int q -> 5;
 	str g -> "Anarchy";
-	int:const f;
-	pointer:const s <- r;
-	pointer:const u -> &r;
 	int:const t -> *s;
-
 	int:local v -> 5;
 
-	y -> 5.3;
 	%rax -> 0;
 	exit;
 }

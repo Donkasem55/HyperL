@@ -93,9 +93,15 @@ def gencode(data, ptrsize):
 					elif datatype == "DOUBLE":
 						datatype = 8
 					elif datatype == "STR":
+						gi += 1
+						progdata += [[1, f"gi{gi}", default]]
 						datatype = ptrsize
+						default = {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}
 					elif datatype == "PTR":
 						datatype = ptrsize
+					args[k]["DATATYPE"] = datatype
+					args[k]["DEFAULT"] = default
+					func[i["NODE"]][k] = args
 					args[k] = (datatype, default)
 
 				for k in args:
@@ -115,11 +121,11 @@ def gencode(data, ptrsize):
 
 				code += [["label", f"_{i["NODE"]}"]]
 				code += [[f"mov {ptrsize}", "TEMP", ("reg", "r1")]]
-				code += [["pull", ("reg", "r1")]]
-				code += [["add", ("reg", "sp"), {"TYPE":"INT", "NODE":argsoffset+2*ptrsize}]]
-				code += [["push", ("reg", "r1")]]
-				code += [["push", ("reg", "bp")]]
-				code += [["sub", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
+				code += [["pull reg", ("reg", "r1")]]
+				code += [["add reg", ("reg", "sp"), {"TYPE":"INT", "NODE":argsoffset+2*ptrsize}]]
+				code += [["push reg", ("reg", "r1")]]
+				code += [["push reg", ("reg", "bp")]]
+				code += [["sub reg", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
 				code += [["mov reg", ("reg", "bp"), ("reg", "sp")]]
 
 				for k in local[-1]:
@@ -133,20 +139,36 @@ def gencode(data, ptrsize):
 				rodata += b
 				bss += c
 				code += d
-				code += [["add", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
-				code += [["pull", ("reg", "bp")]]
+				code += [["add reg", ("reg", "sp"), {"TYPE":"INT", "NODE":offset}]]
+				code += [["pull reg", ("reg", "bp")]]
 				code += [["ret"]]
 				local.pop(-1)
 				localoffset.pop(-1)
 
 			elif i["TYPE"] == "FUNCTIONCALL":
-				print(i)
+				args = func[i["NODE"]]
+
+				arg = {k:[] for k in args}
+				for k in args:
+					if k in i["ARGS"]:
+						if i["ARGS"][k]["TYPE"] in ["INT", "FLOAT", "DOUBLE"]:
+							arg[k] = [[f"push {args[k][0]}", i["ARGS"][k]["NODE"]]]
+						elif i["ARGS"][k]["TYPE"] == "STR":
+							gi += 1
+							progdata += [[1, f"gi{gi}", i["ARGS"][k]["NODE"]]]
+							arg[k] = [[f"push {ptrsize}", {"TYPE":"ADDRESS", "NODE":f"gi{gi}"}]]
+
+					else:
+						arg[k] = [[f"push {args[k][0]}", args[k][1]]]
+
+				for k in arg:
+					code += arg[k]
 
 			elif i["TYPE"] == "ASSIGNMENT":
 				node = i["NODE"][0]["NODE"]
 				default = i["NODE"][1]
 				if i["NODE"][0]["TYPE"] == "REGISTER":
-					code.append(["mov reg_abs", f"{node}", default])
+					code.append(["mov reg_abs", ("reg_abs", f"{node}"), default])
 					j += 1
 					continue
 				datatype = var[i["NODE"][0]["NODE"]][0]
@@ -167,9 +189,6 @@ def gencode(data, ptrsize):
 				elif datatype == "PTR":
 					code.append([f"mov {ptrsize}", f"_{node}", default])
 
-			elif i["TYPE"] == "BOOL_BINARY":
-				code.append(["bool_binary_operation", i])
-
 			else:
 				a, b, c, d = gencode(i, ptrsize)
 				progdata += a
@@ -183,10 +202,13 @@ def gencode(data, ptrsize):
 		add = []
 		datatype = data["NODE"]["DATATYPE"]
 		default = data["NODE"]["DEFAULT"]
+		deref = False
 
 		if type(default) is dict:
 			if default["TYPE"] == "ADDRESS":
 				default["NODE"] = f"_{default["NODE"]}"
+			elif default["TYPE"] == "DEREF":
+				deref = True
 
 		elif type(default) is str:
 			default = {"TYPE":"STR", "NODE":[ord(i) for i in default] + [0]}
@@ -231,8 +253,29 @@ def gencode(data, ptrsize):
 			var[data["NODE"]["NAME"]] = (datatype, "MUT")
 			progdata += add
 
+		if deref and not data["NODE"]["local"]:
+			code += [[f"mov {datatype}", f"_{data["NODE"]["NAME"]}", default]]
+
+
 	elif data["TYPE"] == "BOOL_BINARY":
 		code.append(["bool_binary_operation", data])
+
+	elif data["TYPE"] == "MATH_BINARY":
+		code.append(["math_binary_operation", data])
+
+	elif data["TYPE"] == "MATH_UNARY":
+		code.append(["math_unary_operation", data])
+
+		t = data["OPERATION"]
+		a = data["NODE"][0]
+		b = data["NODE"][1]
+		if a["TYPE"] == "REGISTER":
+			c = ("reg_abs", a["NODE"])
+		if b["TYPE"] == "REGISTER":
+			d = ("reg_abs", b["NODE"])
+		if t == "PLUS":
+			if a["TYPE"] == "REGISTER":
+				code += [["add reg_abs", ("reg", a["NODE"])]]
 
 	return progdata, rodata, bss, code
 
